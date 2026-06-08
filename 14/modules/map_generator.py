@@ -1,23 +1,75 @@
 import folium
-from folium import plugins
+from folium.plugins import HeatMap
 import os
 
 
-def generate_heatmap(df, center_lat, center_lon, output_dir):
-    m = folium.Map(location=[center_lat, center_lon], zoom_start=12, tiles='OpenStreetMap')
+class MapGenerator:
+    def __init__(self, df):
+        self.df = df
+        self.center_lat = df['上车纬度'].mean()
+        self.center_lon = df['上车经度'].mean()
 
-    heat_data = df[['上车纬度', '上车经度']].dropna().values.tolist()
+    def generate_heatmap(self, output_path='templates/heatmap_map.html'):
+        m = folium.Map(
+            location=[self.center_lat, self.center_lon],
+            zoom_start=12,
+            tiles='CartoDB positron'
+        )
 
-    if heat_data:
-        plugins.HeatMap(
+        heat_data = [
+            [row['上车纬度'], row['上车经度']]
+            for _, row in self.df.iterrows()
+        ]
+
+        gradient = {
+            0.2: '#fee5d9',
+            0.4: '#fcae91',
+            0.6: '#fb6a4a',
+            0.8: '#de2d26',
+            1.0: '#a50f15'
+        }
+
+        HeatMap(
             heat_data,
             min_opacity=0.3,
-            max_val=1.0,
-            radius=15,
-            blur=10,
-            gradient={0.2: 'blue', 0.4: 'lime', 0.6: 'yellow', 0.8: 'orange', 1.0: 'red'}
+            radius=18,
+            blur=22,
+            gradient=gradient,
+            max_zoom=15
         ).add_to(m)
 
-    output_path = os.path.join(output_dir, 'heatmap.html')
-    m.save(output_path)
-    return output_path
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        m.save(output_path)
+        print(f"热力地图已生成: {output_path}，包含 {len(heat_data)} 个数据点")
+        return output_path
+
+    def get_heatmap_html(self):
+        m = folium.Map(
+            location=[self.center_lat, self.center_lon],
+            zoom_start=12,
+            tiles='CartoDB positron'
+        )
+
+        heat_data = [
+            [row['上车纬度'], row['上车经度']]
+            for _, row in self.df.iterrows()
+        ]
+
+        gradient = {
+            0.2: '#fee5d9',
+            0.4: '#fcae91',
+            0.6: '#fb6a4a',
+            0.8: '#de2d26',
+            1.0: '#a50f15'
+        }
+
+        HeatMap(
+            heat_data,
+            min_opacity=0.3,
+            radius=18,
+            blur=22,
+            gradient=gradient,
+            max_zoom=15
+        ).add_to(m)
+
+        return m._repr_html_()

@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="stats-cards">
+    <div class="stat-card">
+        <div class="stat-label">订单总数</div>
+        <div class="stat-value">{{ stats.total_orders }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">总车费（元）</div>
+        <div class="stat-value">¥{{ stats.total_fare }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">平均车费（元）</div>
+        <div class="stat-value">¥{{ stats.avg_fare }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">平均距离（公里）</div>
+        <div class="stat-value">{{ stats.avg_distance }} km</div>
+    </div>
+</div>
+
+<div class="content-card">
+    <h2>📊 各区域平均车费与平均距离对比</h2>
+    <div class="chart-container" id="regionChart"></div>
+</div>
+
+<div class="content-card">
+    <h2>📋 区域详细统计数据</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>区域</th>
+                <th>订单数</th>
+                <th>平均车费（元）</th>
+                <th>平均距离（公里）</th>
+                <th>总车费（元）</th>
+                <th>总距离（公里）</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in region_stats %}
+            <tr>
+                <td><strong>{{ row['区域'] }}</strong></td>
+                <td>{{ row['订单数'] }}</td>
+                <td>¥{{ row['平均车费'] }}</td>
+                <td>{{ row['平均距离'] }} km</td>
+                <td>¥{{ row['总车费'] }}</td>
+                <td>{{ row['总距离'] }} km</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    var chartData = {{ bar_chart_json|safe }};
+    Plotly.newPlot('regionChart', chartData.data, chartData.layout, {responsive: true});
+</script>
+{% endblock %}

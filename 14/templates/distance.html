@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="stats-cards">
+    <div class="stat-card">
+        <div class="stat-label">订单总数</div>
+        <div class="stat-value">{{ stats.total_orders }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">总车费（元）</div>
+        <div class="stat-value">¥{{ stats.total_fare }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">平均车费（元）</div>
+        <div class="stat-value">¥{{ stats.avg_fare }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">平均距离（公里）</div>
+        <div class="stat-value">{{ stats.avg_distance }} km</div>
+    </div>
+</div>
+
+<div class="content-card">
+    <h2>📏 订单距离分布直方图</h2>
+    <div class="chart-container" id="distanceChart"></div>
+</div>
+
+<div class="content-card">
+    <h2>📋 各距离区间详细统计</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>距离区间</th>
+                <th>订单数</th>
+                <th>占比</th>
+                <th>平均车费（元）</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set total = namespace(value=0) %}
+            {% for row in dist_stats %}
+                {% set total.value = total.value + row['订单数'] %}
+            {% endfor %}
+            {% for row in dist_stats %}
+            <tr>
+                <td><strong>{{ row['距离区间'] }}</strong></td>
+                <td>{{ row['订单数'] }}</td>
+                <td>{{ ((row['订单数'] / total.value) * 100)|round(1) }}%</td>
+                <td>¥{{ row['平均车费'] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    var chartData = {{ hist_chart_json|safe }};
+    Plotly.newPlot('distanceChart', chartData.data, chartData.layout, {responsive: true});
+</script>
+{% endblock %}

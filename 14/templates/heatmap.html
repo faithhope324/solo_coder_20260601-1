@@ -1,10 +1,37 @@
-{% extends "base.html" %}
-{% block title %}热力地图 - 网约车订单区域分析{% endblock %}
+{% extends 'base.html' %}
 {% block content %}
-<h1 class="page-title">🔥 订单热力地图</h1>
+<div class="stats-cards">
+    <div class="stat-card">
+        <div class="stat-label">订单总数</div>
+        <div class="stat-value">{{ stats.total_orders }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">总车费（元）</div>
+        <div class="stat-value">¥{{ stats.total_fare }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">平均车费（元）</div>
+        <div class="stat-value">¥{{ stats.avg_fare }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">平均距离（公里）</div>
+        <div class="stat-value">{{ stats.avg_distance }} km</div>
+    </div>
+</div>
+
 <div class="content-card">
-    <h2>上车点分布热力图</h2>
-    <p style="color:#7f8c8d; font-size:13px; margin-bottom:12px;">红色区域表示订单密集区，颜色越深代表订单越集中。</p>
-    <iframe src="{{ url_for('serve_heatmap') }}"></iframe>
+    <h2>🔥 订单上车点热力分布</h2>
+    <div class="map-container">
+        {{ heatmap_html|safe }}
+    </div>
+</div>
+
+<div class="content-card">
+    <h2>📋 热力图说明</h2>
+    <p style="color: #555; line-height: 1.8; font-size: 14px;">
+        本热力图根据订单上车点经纬度数据绘制，颜色越深表示该区域订单密度越高。<br>
+        <strong style="color: #a50f15;">深红色</strong> 表示订单密集区，<strong style="color: #fee5d9;">浅红色</strong> 表示订单稀疏区。<br>
+        使用顶部侧边栏的日期筛选器可查看不同时间范围的数据。
+    </p>
 </div>
 {% endblock %}
