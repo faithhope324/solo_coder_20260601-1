@@ -1,97 +1,63 @@
 import random
 import string
-from typing import Optional, List, Dict
 from models import db, Room, Vote
 
 
-def generate_room_code(length: int = 6) -> str:
-    chars = string.ascii_uppercase + string.digits
+def generate_room_code():
     while True:
-        code = ''.join(random.choices(chars, k=length))
+        code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
         if not Room.query.filter_by(code=code).first():
             return code
 
 
-def create_room(title: str, options: List[str], host_session_id: str) -> Room:
+def create_room(title, options):
     code = generate_room_code()
-    room = Room(
-        code=code,
-        title=title,
-        options=options,
-        host_session_id=host_session_id
-    )
+    room = Room(code=code, title=title, options=options)
     db.session.add(room)
     db.session.commit()
     return room
 
 
-def get_room(code: str) -> Optional[Room]:
-    return Room.query.filter_by(code=code.upper()).first()
+def get_room(code):
+    return Room.query.filter_by(code=code).first()
 
 
-def end_room(code: str) -> Optional[Room]:
+def end_room(code):
     room = get_room(code)
     if room:
-        room.is_ended = True
+        room.is_active = False
         db.session.commit()
     return room
 
 
-def has_voted(room_code: str, ip_address: str, session_id: str) -> bool:
+def has_voted(room_id, voter_ip, voter_session):
     return Vote.query.filter(
-        Vote.room_code == room_code,
-        ((Vote.ip_address == ip_address) | (Vote.session_id == session_id))
+        (Vote.room_id == room_id) &
+        ((Vote.voter_ip == voter_ip) | (Vote.voter_session == voter_session))
     ).first() is not None
 
 
-def cast_vote(room_code: str, option_index: int, ip_address: str, session_id: str) -> Optional[Vote]:
-    room = get_room(room_code)
-    if not room or room.is_ended:
+def add_vote(room_id, option, voter_ip, voter_session):
+    if has_voted(room_id, voter_ip, voter_session):
         return None
-    if option_index < 0 or option_index >= len(room.options):
-        return None
-    if has_voted(room_code, ip_address, session_id):
-        return None
-
-    vote = Vote(
-        room_code=room_code,
-        option_index=option_index,
-        ip_address=ip_address,
-        session_id=session_id
-    )
+    vote = Vote(room_id=room_id, option=option, voter_ip=voter_ip, voter_session=voter_session)
     db.session.add(vote)
     db.session.commit()
     return vote
 
 
-def get_vote_results(room_code: str) -> Dict:
-    room = get_room(room_code)
+def get_vote_results(room_id):
+    room = Room.query.get(room_id)
     if not room:
         return {}
-
-    options = room.options
-    counts = [0] * len(options)
-    total = 0
-
-    votes = Vote.query.filter_by(room_code=room_code).all()
+    options = room.get_options_list()
+    results = {opt: 0 for opt in options}
+    votes = Vote.query.filter_by(room_id=room_id).all()
     for vote in votes:
-        if 0 <= vote.option_index < len(counts):
-            counts[vote.option_index] += 1
-            total += 1
+        if vote.option in results:
+            results[vote.option] += 1
+    return results
 
-    percentages = []
-    for c in counts:
-        if total > 0:
-            percentages.append(round(c / total * 100, 1))
-        else:
-            percentages.append(0.0)
 
-    return {
-        'room_code': room_code,
-        'title': room.title,
-        'options': options,
-        'counts': counts,
-        'percentages': percentages,
-        'total': total,
-        'is_ended': room.is_ended
-    }
+def get_vote_count(room_id):
+    return Vote.query.filter_by(room_id=room_id).count()
