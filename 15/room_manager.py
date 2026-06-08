@@ -1,5 +1,6 @@
 import random
 import string
+from sqlalchemy.exc import IntegrityError
 from models import db, Room, Vote
 
 
@@ -10,9 +11,9 @@ def generate_room_code():
             return code
 
 
-def create_room(title, options):
+def create_room(title, options, host_session=None):
     code = generate_room_code()
-    room = Room(code=code, title=title, options=options)
+    room = Room(code=code, title=title, options=options, host_session=host_session)
     db.session.add(room)
     db.session.commit()
     return room
@@ -42,8 +43,12 @@ def add_vote(room_id, option, voter_ip, voter_session):
         return None
     vote = Vote(room_id=room_id, option=option, voter_ip=voter_ip, voter_session=voter_session)
     db.session.add(vote)
-    db.session.commit()
-    return vote
+    try:
+        db.session.commit()
+        return vote
+    except IntegrityError:
+        db.session.rollback()
+        return None
 
 
 def get_vote_results(room_id):
@@ -61,3 +66,9 @@ def get_vote_results(room_id):
 
 def get_vote_count(room_id):
     return Vote.query.filter_by(room_id=room_id).count()
+
+
+def get_host_rooms(host_session):
+    if not host_session:
+        return []
+    return Room.query.filter_by(host_session=host_session).order_by(Room.created_at.desc()).all()

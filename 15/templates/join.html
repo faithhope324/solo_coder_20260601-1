@@ -156,6 +156,11 @@ socket.on('vote_success', (data) => {
 socket.on('vote_error', (data) => {
     document.getElementById('vote-status').innerHTML =
         '<span style="color:#c53030;font-weight:600;">✗ ' + data.message + '</span>';
+    const buttons = document.querySelectorAll('#options-grid .option-btn');
+    buttons.forEach(b => {
+        b.disabled = false;
+        b.classList.remove('voted');
+    });
 });
 
 socket.on('vote_ended', (data) => {
@@ -169,7 +174,12 @@ socket.on('vote_ended', (data) => {
 
 document.querySelectorAll('#options-grid .option-btn').forEach(btn => {
     btn.addEventListener('click', () => {
+        const buttons = document.querySelectorAll('#options-grid .option-btn');
+        buttons.forEach(b => b.disabled = true);
+        document.getElementById('vote-status').innerHTML =
+            '<span style="color:#667eea;font-weight:600;">投票提交中...</span>';
         socket.emit('vote', { code: roomCode, option: btn.dataset.option });
+        btn.classList.add('voted');
     });
 });
 

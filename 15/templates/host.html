@@ -19,6 +19,7 @@
 </p>
 
 <div class="info-bar">
+    <div class="info-item"><a href="{{ url_for('create_page') }}" style="color:#667eea;text-decoration:none;font-weight:600;">← 返回创建页面</a></div>
     <div class="info-item">当前在线：<strong id="online-count">0</strong> 人</div>
     <div class="info-item">总票数：<strong id="total-votes">0</strong> 票</div>
     {% if room.is_active %}
@@ -147,6 +148,8 @@ const endBtn = document.getElementById('end-btn');
 if (endBtn) {
     endBtn.addEventListener('click', () => {
         if (confirm('确定要结束投票吗？结束后将不再接受新票。')) {
+            endBtn.disabled = true;
+            endBtn.textContent = '结束中...';
             socket.emit('end_vote', { code: roomCode });
         }
     });

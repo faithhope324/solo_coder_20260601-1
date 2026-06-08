@@ -6,6 +6,31 @@
 <h1>创建新投票</h1>
 <p class="subtitle">填写投票信息，创建实时投票房间</p>
 
+{% if my_rooms %}
+<div style="margin-bottom:32px;">
+    <h2 style="font-size:18px;margin-bottom:12px;color:#2d3748;">我主持的投票</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">
+        {% for r in my_rooms %}
+        <a href="{{ url_for('host_page', code=r.code) }}"
+           style="display:block;padding:16px;background:#f7fafc;border:2px solid #e2e8f0;border-radius:10px;text-decoration:none;color:#2d3748;transition:all .2s;"
+           onmouseover="this.style.borderColor='#667eea';this.style.background='#ebf4ff';"
+           onmouseout="this.style.borderColor='#e2e8f0';this.style.background='#f7fafc';">
+            <div style="font-weight:600;margin-bottom:6px;">{{ r.title }}</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#718096;">
+                <span>房间码: <strong style="color:#667eea;">{{ r.code }}</strong></span>
+                {% if r.is_active %}
+                <span class="status-badge status-active">进行中</span>
+                {% else %}
+                <span class="status-badge status-ended">已结束</span>
+                {% endif %}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin-bottom:32px;">
+{% endif %}
+
 {% if error %}
 <div class="error">{{ error }}</div>
 {% endif %}

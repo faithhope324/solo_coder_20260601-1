@@ -12,6 +12,7 @@ class Room(db.Model):
     title = db.Column(db.String(200), nullable=False)
     options = db.Column(db.Text, nullable=False)
     is_active = db.Column(db.Boolean, default=True)
+    host_session = db.Column(db.String(100), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     votes = db.relationship('Vote', backref='room', lazy=True, cascade='all, delete-orphan')

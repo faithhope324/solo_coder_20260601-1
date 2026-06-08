@@ -1,11 +1,11 @@
 import os
 import uuid
-from flask import Flask, render_template, request, jsonify, session, url_for, redirect
+from flask import Flask, render_template, request, jsonify, session, url_for, redirect, abort
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from models import db
 from room_manager import (
     create_room, get_room, end_room, add_vote,
-    has_voted, get_vote_results, get_vote_count
+    has_voted, get_vote_results, get_vote_count, get_host_rooms
 )
 
 app = Flask(__name__)
@@ -36,6 +36,12 @@ def get_client_ip():
     return request.remote_addr or 'unknown'
 
 
+def is_host(room):
+    if not room or not room.host_session:
+        return False
+    return room.host_session == get_or_create_session_id()
+
+
 @app.route('/')
 def index():
     return redirect(url_for('create_page'))
@@ -43,24 +49,29 @@ def index():
 
 @app.route('/create', methods=['GET', 'POST'])
 def create_page():
+    voter_id = get_or_create_session_id()
+    my_rooms = get_host_rooms(voter_id)
+
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
         options = request.form.get('options', '').strip()
         if not title or not options:
-            return render_template('create.html', error='请填写标题和选项')
+            return render_template('create.html', error='请填写标题和选项', my_rooms=my_rooms)
         options_list = [opt.strip() for opt in options.split(',') if opt.strip()]
         if len(options_list) < 2:
-            return render_template('create.html', error='至少需要 2 个选项')
-        room = create_room(title, options)
+            return render_template('create.html', error='至少需要 2 个选项', my_rooms=my_rooms)
+        room = create_room(title, options, host_session=voter_id)
         return redirect(url_for('host_page', code=room.code))
-    return render_template('create.html')
+    return render_template('create.html', my_rooms=my_rooms)
 
 
 @app.route('/host/<code>')
 def host_page(code):
     room = get_room(code)
     if not room:
-        return '房间不存在', 404
+        abort(404)
+    if not is_host(room):
+        return '无权访问主持人页面', 403
     return render_template('host.html', room=room)
 
 
@@ -68,7 +79,7 @@ def host_page(code):
 def join_page(code):
     room = get_room(code)
     if not room:
-        return '房间不存在', 404
+        abort(404)
     voter_id = get_or_create_session_id()
     voter_ip = get_client_ip()
     already_voted = has_voted(room.id, voter_ip, voter_id)
@@ -127,7 +138,7 @@ def on_vote(data):
         return
     vote = add_vote(room.id, option, voter_ip, voter_id)
     if not vote:
-        emit('vote_error', {'message': '投票失败'})
+        emit('vote_error', {'message': '您已经投过票了'})
         return
     results = get_vote_results(room.id)
     total = get_vote_count(room.id)
@@ -148,6 +159,9 @@ def on_end_vote(data):
     room = get_room(code)
     if not room:
         emit('error', {'message': '房间不存在'})
+        return
+    if not is_host(room):
+        emit('error', {'message': '只有主持人可以结束投票'})
         return
     room = end_room(code)
     results = get_vote_results(room.id)
