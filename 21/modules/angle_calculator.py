@@ -92,8 +92,12 @@ class AngleCalculator:
         }
 
     def calculate_angle(self, p1: np.ndarray, p2: np.ndarray, p3: np.ndarray) -> float:
-        v1 = p1 - p2
-        v2 = p3 - p2
+        p1_2d = np.array([p1[0], p1[1]])
+        p2_2d = np.array([p2[0], p2[1]])
+        p3_2d = np.array([p3[0], p3[1]])
+
+        v1 = p1_2d - p2_2d
+        v2 = p3_2d - p2_2d
 
         dot = np.dot(v1, v2)
         norm_v1 = np.linalg.norm(v1)
@@ -128,7 +132,7 @@ class AngleCalculator:
                 if kp.get('visibility', 0) < 0.3:
                     valid = False
                     break
-                points.append(np.array([kp['x'], kp['y'], kp.get('z', 0)]))
+                points.append(np.array([kp['x'], kp['y']]))
 
             if valid and len(points) == 3:
                 angle = self.calculate_angle(points[0], points[1], points[2])
