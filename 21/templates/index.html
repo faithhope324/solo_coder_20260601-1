@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人体姿态评估系统 - 瑜伽动作比对</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🧘 人体姿态评估系统</h1>
+            <p class="subtitle">瑜伽动作智能比对 · 关键点分析 · 评分与建议</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="single">单图评估</button>
+            <button class="tab-btn" data-tab="batch">批量评估</button>
+        </div>
+
+        <div class="tab-content active" id="single-tab">
+            <div class="upload-section">
+                <div class="upload-box">
+                    <h3>标准姿势图</h3>
+                    <div class="file-drop" id="standard-drop">
+                        <input type="file" id="standard-input" accept="image/*" hidden>
+                        <div class="drop-placeholder">
+                            <div class="icon">📷</div>
+                            <p>点击或拖拽上传标准姿势图</p>
+                            <span class="hint">支持 JPG、PNG、JPEG 格式</span>
+                        </div>
+                        <img id="standard-preview" class="preview-img" alt="标准姿势预览">
+                    </div>
+                </div>
+
+                <div class="vs-badge">VS</div>
+
+                <div class="upload-box">
+                    <h3>练习图</h3>
+                    <div class="file-drop" id="practice-drop">
+                        <input type="file" id="practice-input" accept="image/*" hidden>
+                        <div class="drop-placeholder">
+                            <div class="icon">🏃</div>
+                            <p>点击或拖拽上传练习图</p>
+                            <span class="hint">支持 JPG、PNG、JPEG 格式</span>
+                        </div>
+                        <img id="practice-preview" class="preview-img" alt="练习图预览">
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-bar">
+                <button id="evaluate-btn" class="btn-primary" disabled>
+                    <span class="btn-text">开始评估</span>
+                    <span class="btn-loading" style="display:none;">处理中...</span>
+                </button>
+                <button id="reset-btn" class="btn-secondary">重置</button>
+            </div>
+        </div>
+
+        <div class="tab-content" id="batch-tab">
+            <div class="upload-section batch-section">
+                <div class="upload-box wide">
+                    <h3>标准姿势图</h3>
+                    <div class="file-drop" id="batch-standard-drop">
+                        <input type="file" id="batch-standard-input" accept="image/*" hidden>
+                        <div class="drop-placeholder">
+                            <div class="icon">📷</div>
+                            <p>点击或拖拽上传标准姿势图</p>
+                            <span class="hint">支持 JPG、PNG、JPEG 格式</span>
+                        </div>
+                        <img id="batch-standard-preview" class="preview-img" alt="标准姿势预览">
+                    </div>
+                </div>
+
+                <div class="upload-box wide">
+                    <h3>练习图压缩包 (ZIP)</h3>
+                    <div class="file-drop" id="batch-zip-drop">
+                        <input type="file" id="batch-zip-input" accept=".zip" hidden>
+                        <div class="drop-placeholder">
+                            <div class="icon">📦</div>
+                            <p>点击或拖拽上传 ZIP 压缩包</p>
+                            <span class="hint">包含多张练习图，支持 JPG、PNG 格式</span>
+                        </div>
+                        <div id="batch-zip-info" class="zip-info"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-bar">
+                <button id="batch-evaluate-btn" class="btn-primary" disabled>
+                    <span class="btn-text">批量评估</span>
+                    <span class="btn-loading" style="display:none;">处理中...</span>
+                </button>
+                <button id="batch-reset-btn" class="btn-secondary">重置</button>
+            </div>
+        </div>
+
+        <div id="error-message" class="error-box" style="display:none;"></div>
+
+        <div id="results-section" class="results-section" style="display:none;">
+            <h2>📊 评估结果</h2>
+
+            <div class="score-card">
+                <div class="score-display">
+                    <div class="score-number" id="score-number">--</div>
+                    <div class="score-label">相似度得分</div>
+                </div>
+                <div class="score-bar-container">
+                    <div class="score-bar" id="score-bar">
+                        <div class="score-fill" id="score-fill"></div>
+                    </div>
+                    <div class="score-labels">
+                        <span>0</span>
+                        <span>25</span>
+                        <span>50</span>
+                        <span>75</span>
+                        <span>100</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="image-comparison">
+                <div class="image-pair">
+                    <div class="image-item">
+                        <h4>标准姿势 (原图)</h4>
+                        <img id="result-standard-orig" class="result-img" alt="标准姿势原图">
+                    </div>
+                    <div class="image-item">
+                        <h4>练习姿势 (原图)</h4>
+                        <img id="result-practice-orig" class="result-img" alt="练习姿势原图">
+                    </div>
+                </div>
+                <div class="image-pair">
+                    <div class="image-item">
+                        <h4>标准姿势 (骨架)</h4>
+                        <img id="result-standard-pose" class="result-img" alt="标准姿势骨架">
+                    </div>
+                    <div class="image-item">
+                        <h4>练习姿势 (骨架)</h4>
+                        <img id="result-practice-pose" class="result-img" alt="练习姿势骨架">
+                    </div>
+                </div>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <span class="legend-dot green"></span>
+                    <span>正常</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot red"></span>
+                    <span>差异较大</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot blue"></span>
+                    <span>关键点</span>
+                </div>
+            </div>
+
+            <div class="suggestions-section">
+                <h3>💡 改进建议</h3>
+                <p class="summary" id="suggestion-summary"></p>
+                <div class="suggestions-list" id="suggestions-list"></div>
+            </div>
+
+            <div class="details-section">
+                <button class="details-toggle" id="details-toggle">
+                    <span>查看详细角度数据</span>
+                    <span class="arrow">▼</span>
+                </button>
+                <div class="details-content" id="details-content" style="display:none;">
+                    <table class="angle-table">
+                        <thead>
+                            <tr>
+                                <th>关节</th>
+                                <th>标准角度</th>
+                                <th>练习角度</th>
+                                <th>差异</th>
+                                <th>权重</th>
+                            </tr>
+                        </thead>
+                        <tbody id="angle-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="batch-results-section" class="results-section" style="display:none;">
+            <h2>📊 批量评估结果</h2>
+
+            <div class="batch-summary">
+                <div class="summary-card">
+                    <div class="summary-number" id="batch-total">0</div>
+                    <div class="summary-label">总张数</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-number" id="batch-success">0</div>
+                    <div class="summary-label">成功</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-number" id="batch-avg">--</div>
+                    <div class="summary-label">平均分</div>
+                </div>
+            </div>
+
+            <div class="download-section">
+                <a id="download-csv-btn" class="btn-primary" href="#" download>
+                    📥 下载 CSV 报告
+                </a>
+            </div>
+
+            <div class="batch-results-grid" id="batch-results-grid"></div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
