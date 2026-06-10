@@ -152,7 +152,8 @@ class FruitGenerator:
 
     def draw(self, surface):
         for fruit in self.fruits:
-            fruit.draw(surface)
+            if fruit.active and not fruit.sliced:
+                fruit.draw(surface)
 
     def get_active_fruits(self):
         return [f for f in self.fruits if f.active and not f.sliced]

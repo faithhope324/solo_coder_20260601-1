@@ -1,6 +1,7 @@
 import json
 import os
 import time
+import pygame
 from config import *
 
 
@@ -62,18 +63,19 @@ class ComboSystem:
         self.fever_start_time = 0
         self.score_multiplier = 1
 
-    def on_fruit_sliced(self, current_time):
-        time_since_last_slice = current_time - self.last_slice_time
+    def on_fruit_sliced(self, current_time_ms):
+        time_since_last_slice_ms = current_time_ms - self.last_slice_time
+        time_since_last_slice_sec = time_since_last_slice_ms / 1000.0
 
-        if time_since_last_slice < COMBO_INTERVAL and self.last_slice_time > 0:
+        if time_since_last_slice_sec < COMBO_INTERVAL and self.last_slice_time > 0:
             self.combo_count += 1
         else:
             self.combo_count = 1
 
-        self.last_slice_time = current_time
+        self.last_slice_time = current_time_ms
 
         if self.combo_count >= COMBO_THRESHOLD and not self.in_fever:
-            self._activate_fever(current_time)
+            self._activate_fever(current_time_ms)
             return 'fever'
 
         if self.combo_count >= COMBO_THRESHOLD:
@@ -107,8 +109,9 @@ class ComboSystem:
     def get_fever_remaining(self):
         if not self.in_fever:
             return 0
-        elapsed = (time.time() * 1000 - self.fever_start_time) / 1000.0
-        return max(0, FEVER_DURATION - elapsed)
+        current_time_ms = pygame.time.get_ticks()
+        elapsed_sec = (current_time_ms - self.fever_start_time) / 1000.0
+        return max(0, FEVER_DURATION - elapsed_sec)
 
     def reset(self):
         self.combo_count = 0
